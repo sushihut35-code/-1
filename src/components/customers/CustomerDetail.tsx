@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Customer } from '../../db/db';
 import { useItems } from '../../composables/useInventory';
-import { useCustomerItems, addCustomerItem, deleteCustomerItem, markAsPaid, usePaidItems } from '../../composables/useCustomerItems';
+import { useCustomerItems, addCustomerItem, deleteCustomerItem, markAsPaid, markSelectedAsPaid, usePaidItems } from '../../composables/useCustomerItems';
 import { useToast } from '../common/Toast';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface CustomerDetailProps {
   customer: Customer;
@@ -16,6 +17,8 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
   const paidItems = usePaidItems(customer.id);
   const [showAddItem, setShowAddItem] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPaidConfirm, setShowPaidConfirm] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const { showToast } = useToast();
 
   const handleAddItem = async (itemId: number) => {
@@ -30,7 +33,8 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
       setShowAddItem(false);
     } catch (error) {
       console.error('Failed to add item:', error);
-      showToast('商品の追加に失敗しました', 'error');
+      const errorMessage = error instanceof Error ? error.message : '商品の追加に失敗しました';
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -48,25 +52,61 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
     if (!customer.id) return;
 
     if ((customerItems?.length || 0) === 0) {
-      showToast('商品がありません', 'error');
+      showToast('キープ中の商品がないため、支払い処理を行えません', 'error');
       return;
     }
 
-    if (!confirm(`${customerItems?.length}点の商品を支払い済みに移動しますか？`)) {
-      return;
-    }
+    setShowPaidConfirm(true);
+  };
+
+  const confirmMarkAsPaid = async () => {
+    if (!customer.id) return;
 
     setIsProcessing(true);
+    setShowPaidConfirm(false);
     try {
-      await markAsPaid(customer.id);
-      showToast('支払い済みに移動しました', 'success');
+      if (selectedItems.length > 0) {
+        // 選択した商品のみを支払い済みに
+        await markSelectedAsPaid(customer.id, selectedItems);
+        setSelectedItems([]);
+        showToast(`選択した${selectedItems.length}点の商品を支払い済みに移動しました`, 'success');
+      } else {
+        // 全商品を支払い済みに
+        await markAsPaid(customer.id);
+        showToast('支払い済みに移動しました', 'success');
+      }
     } catch (error) {
       console.error('Failed to mark as paid:', error);
-      showToast('処理に失敗しました', 'error');
+      showToast('支払い済みへの移動に失敗しました。もう一度お試しください', 'error');
     } finally {
       setIsProcessing(false);
     }
   };
+
+  const toggleItemSelection = (itemId: number) => {
+    setSelectedItems(prev =>
+      prev.includes(itemId)
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const selectAllItems = () => {
+    if (customerItems) {
+      const allIds = customerItems.map(item => item.id!).filter(Boolean);
+      setSelectedItems(allIds);
+    }
+  };
+
+  const deselectAllItems = () => {
+    setSelectedItems([]);
+  };
+
+  // 合計金額を計算
+  const totalAmount = customerItems?.reduce((sum, item) => sum + (item.itemPrice || 0), 0) || 0;
+  const selectedTotalAmount = customerItems
+    ?.filter(item => item.id && selectedItems.includes(item.id))
+    .reduce((sum, item) => sum + (item.itemPrice || 0), 0) || 0;
 
   return (
     <div className="space-y-6">
@@ -148,7 +188,7 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
                 disabled={isProcessing}
                 className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isProcessing ? '処理中...' : '💰 支払い済み'}
+                {isProcessing ? '支払い処理中...' : '💰 支払い済み'}
               </button>
             )}
           </div>
@@ -185,31 +225,97 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
 
         {/* 購入商品一覧 */}
         {(customerItems?.length || 0) === 0 ? (
-          <p className="text-center text-gray-500 py-8">商品がありません</p>
+          <p className="text-center text-gray-500 py-8">キープ中の商品がありません。「商品を追加」ボタンから商品を追加してください。</p>
         ) : (
-          <div className="grid grid-cols-3 gap-4">
-            {customerItems?.map((item) => (
-              <div key={item.id} className="relative">
-                {item.itemImage ? (
-                  <img
-                    src={item.itemImage}
-                    alt={item.itemName}
-                    className="w-full aspect-square object-cover rounded-lg border border-gray-300"
-                  />
-                ) : (
-                  <div className="w-full aspect-square bg-gray-200 rounded-lg flex items-center justify-center">
-                    <span className="text-2xl">📦</span>
-                  </div>
-                )}
+          <div>
+            {/* 選択コントロール */}
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+              <div className="flex gap-2">
                 <button
-                  onClick={() => item.id && handleRemoveItem(item.id)}
-                  className="absolute top-1 right-1 w-6 h-6 bg-red-600 text-white rounded-full text-sm hover:bg-red-700 transition-colors"
+                  onClick={selectAllItems}
+                  className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                  disabled={selectedItems.length === (customerItems?.length || 0)}
                 >
-                  ×
+                  すべて選択
                 </button>
-                <p className="text-sm text-gray-900 mt-1 truncate">{item.itemName}</p>
+                <button
+                  onClick={deselectAllItems}
+                  className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                  disabled={selectedItems.length === 0}
+                >
+                  選択解除
+                </button>
               </div>
-            ))}
+              <span className="text-sm text-gray-600">
+                {selectedItems.length > 0
+                  ? `${selectedItems.length}点選択（¥${selectedTotalAmount.toLocaleString()}）`
+                  : `${customerItems?.length || 0}点の商品`}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {customerItems?.map((item) => (
+                <div
+                  key={item.id}
+                  className={`relative cursor-pointer border-2 rounded-lg transition-all ${
+                    selectedItems.includes(item.id!)
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-transparent hover:border-gray-300'
+                  }`}
+                  onClick={() => item.id && toggleItemSelection(item.id)}
+                >
+                  <div className="absolute top-2 left-2 z-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.includes(item.id!)}
+                      onChange={() => item.id && toggleItemSelection(item.id)}
+                      className="w-5 h-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  {item.itemImage ? (
+                    <img
+                      src={item.itemImage}
+                      alt={item.itemName}
+                      className={`w-full aspect-square object-cover rounded-lg ${
+                        selectedItems.includes(item.id!) ? 'opacity-75' : ''
+                      }`}
+                    />
+                  ) : (
+                    <div className="w-full aspect-square bg-gray-200 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl">📦</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      item.id && handleRemoveItem(item.id);
+                    }}
+                    className="absolute top-1 right-1 w-6 h-6 bg-red-600 text-white rounded-full text-sm hover:bg-red-700 transition-colors z-10"
+                  >
+                    ×
+                  </button>
+                  <p className="text-sm text-gray-900 mt-1 truncate">{item.itemName}</p>
+                  <p className="text-xs text-gray-500">¥{(item.itemPrice || 0).toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* 部分支払いボタン */}
+            {selectedItems.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleMarkAsPaid}
+                  disabled={isProcessing}
+                  className="w-full px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                  {isProcessing
+                    ? '支払い処理中...'
+                    : `選択した${selectedItems.length}点を支払い済みに移動（¥${selectedTotalAmount.toLocaleString()}）`
+                  }
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -243,6 +349,23 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
           </div>
         )}
       </div>
+
+      {/* 支払い確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={showPaidConfirm}
+        title="支払い済みに移動"
+        message={
+          selectedItems.length > 0
+            ? `選択した${selectedItems.length}点の商品を支払い済みに移動してもよろしいですか？`
+            : `${customerItems?.length || 0}点の商品すべてを支払い済みに移動してもよろしいですか？`
+        }
+        details={`合計金額: ¥${(selectedItems.length > 0 ? selectedTotalAmount : totalAmount).toLocaleString()}`}
+        confirmText="支払い済みに移動"
+        cancelText="キャンセル"
+        type="info"
+        onConfirm={confirmMarkAsPaid}
+        onCancel={() => setShowPaidConfirm(false)}
+      />
     </div>
   );
 }

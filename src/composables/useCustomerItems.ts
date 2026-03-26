@@ -142,6 +142,43 @@ export async function markAsPaid(customerId: number): Promise<void> {
   });
 }
 
+// 選択した商品のみを支払い済みに移動
+export async function markSelectedAsPaid(customerId: number, itemIds: number[]): Promise<void> {
+  const items = await db.customerItems.where('customerId').equals(customerId).toArray();
+  const selectedItems = items.filter(item => item.id && itemIds.includes(item.id));
+
+  if (selectedItems.length === 0) return;
+
+  await db.transaction('rw', [db.customerItems, db.paidItems, db.customers], async () => {
+    // 選択した商品の合計額を計算
+    const totalAmount = selectedItems.reduce((sum, item) => sum + (item.itemPrice || 0), 0);
+
+    // 顧客の累計額から選択した商品の合計額を減算
+    const customer = await db.customers.get(customerId);
+    if (customer && customer.totalAmount) {
+      await db.customers.update(customerId, {
+        totalAmount: Math.max(0, customer.totalAmount - totalAmount),
+        updatedAt: new Date()
+      });
+    }
+
+    for (const item of selectedItems) {
+      // 支払い済みに追加
+      await db.paidItems.add({
+        customerId: item.customerId,
+        itemId: item.itemId,
+        itemName: item.itemName,
+        itemImage: item.itemImage,
+        itemPrice: item.itemPrice,
+        paidAt: new Date()
+      });
+
+      // 未支払いから削除
+      await db.customerItems.delete(item.id!);
+    }
+  });
+}
+
 // 支払い済み商品を取得
 export function usePaidItems(customerId: number | undefined) {
   return useLiveQuery(() => {

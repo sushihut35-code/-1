@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Customer } from '../../db/db';
 import { addCustomer, updateCustomer, deleteCustomer, useCustomers } from '../../composables/useCustomers';
 import { useToast } from '../common/Toast';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { CustomerForm } from './CustomerForm';
 import { CustomerDetail } from './CustomerDetail';
 
@@ -11,6 +12,7 @@ export function CustomerList() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | undefined>();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<Customer | undefined>();
   const { showToast } = useToast();
 
   const filteredCustomers = customers?.filter(customer =>
@@ -44,16 +46,20 @@ export function CustomerList() {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('本当に削除しますか？')) {
-      try {
-        await deleteCustomer(id);
-        setSelectedCustomer(undefined);
-        showToast('顧客を削除しました', 'success');
-      } catch (error) {
-        console.error('Failed to delete customer:', error);
-        showToast('顧客の削除に失敗しました', 'error');
-      }
+    try {
+      await deleteCustomer(id);
+      setSelectedCustomer(undefined);
+      setDeleteConfirm(undefined);
+      showToast('顧客を削除しました', 'success');
+    } catch (error) {
+      console.error('Failed to delete customer:', error);
+      showToast('顧客の削除に失敗しました', 'error');
     }
+  };
+
+  const openDeleteConfirm = (customer: Customer) => {
+    setDeleteConfirm(customer);
+    setSelectedCustomer(undefined);
   };
 
   const openEditForm = (customer: Customer) => {
@@ -133,7 +139,7 @@ export function CustomerList() {
                       編集
                     </button>
                     <button
-                      onClick={() => customer.id && handleDelete(customer.id)}
+                      onClick={() => openDeleteConfirm(customer)}
                       className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                     >
                       削除
@@ -213,10 +219,25 @@ export function CustomerList() {
                 setSelectedCustomer(undefined);
                 openEditForm(selectedCustomer);
               }}
-              onDelete={() => selectedCustomer && selectedCustomer.id && handleDelete(selectedCustomer.id)}
+              onDelete={() => selectedCustomer && openDeleteConfirm(selectedCustomer)}
             />
           </div>
         </div>
+      )}
+
+      {/* 削除確認ダイアログ */}
+      {deleteConfirm && (
+        <ConfirmDialog
+          isOpen={!!deleteConfirm}
+          title="顧客の削除"
+          message={`${deleteConfirm.name}さんを削除してもよろしいですか？`}
+          details="この操作は取り消せません。関連するキープ中の商品や支払い済み商品もすべて削除されます。"
+          confirmText="削除する"
+          cancelText="キャンセル"
+          type="danger"
+          onConfirm={() => deleteConfirm.id && handleDelete(deleteConfirm.id)}
+          onCancel={() => setDeleteConfirm(undefined)}
+        />
       )}
     </div>
   );

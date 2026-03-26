@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Customer } from '../../db/db';
+import { useToast } from '../common/Toast';
 
 interface CustomerFormProps {
   customer?: Customer;
@@ -20,6 +21,8 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
 
   const [imagePreview, setImagePreview] = useState(customer?.image || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const { showToast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -35,13 +38,14 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
 
     // 画像ファイルかチェック
     if (!file.type.startsWith('image/')) {
-      alert('画像ファイルを選択してください');
+      showToast('画像ファイルを選択してください', 'error');
       return;
     }
 
     // ファイルサイズが2MBを超える場合は圧縮・縮小
     if (file.size > 2 * 1024 * 1024) {
-      console.log('画像を圧縮・縮小します...');
+      setIsCompressing(true);
+      showToast('画像を圧縮しています...', 'info');
       compressImage(file);
     } else {
       // 小さい場合はそのまま使用
@@ -98,11 +102,17 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
         setImagePreview(compressedDataUrl);
         setFormData(prev => ({ ...prev, image: compressedDataUrl }));
 
+        const originalSize = Math.round(file.size / 1024);
+        const compressedSize = Math.round(compressedDataUrl.length * 0.75 / 1024);
+
         console.log('圧縮完了:', {
-          元のサイズ: Math.round(file.size / 1024) + 'KB',
-          圧縮後のサイズ: Math.round(compressedDataUrl.length * 0.75 / 1024) + 'KB',
+          元のサイズ: originalSize + 'KB',
+          圧縮後のサイズ: compressedSize + 'KB',
           解像度: width + 'x' + height
         });
+
+        setIsCompressing(false);
+        showToast(`画像を圧縮しました（${originalSize}KB → ${compressedSize}KB）`, 'success');
       };
       img.src = e.target?.result as string;
     };
@@ -122,7 +132,8 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
       await onSubmit(formData);
     } catch (error) {
       console.error('Failed to save customer:', error);
-      alert('顧客の保存に失敗しました');
+      const errorMessage = error instanceof Error ? error.message : '顧客の保存に失敗しました。もう一度お試しください。';
+      showToast(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -243,6 +254,13 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
                   >
                     画像を削除
                   </button>
+                </div>
+              ) : isCompressing ? (
+                <div className="border-2 border-dashed rounded-md text-center py-8 bg-gray-50">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-2"></div>
+                    <p className="text-sm text-gray-600">画像を圧縮中...</p>
+                  </div>
                 </div>
               ) : (
                 <div
