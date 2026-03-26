@@ -47,17 +47,6 @@ function App() {
                   <Route path="/settings" element={<div className="p-6"><h2 className="text-2xl font-bold">設定（開発中）</h2></div>} />
                 </Routes>
               </main>
-              {/* デバッグ用メニュー */}
-              <div className="bg-white border-t border-gray-200 py-4">
-                <div className="max-w-7xl mx-auto flex justify-around">
-                  <Link to="/" className="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded">ホーム</Link>
-                  <Link to="/inventory" className="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded">在庫</Link>
-                  <Link to="/sales" className="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded">売上</Link>
-                  <Link to="/customers" className="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded">顧客</Link>
-                  <Link to="/paid-items" className="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded">支払い済み</Link>
-                  <Link to="/analytics" className="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded">分析</Link>
-                </div>
-              </div>
             </div>
           </BrowserRouter>
         </ToastProvider>

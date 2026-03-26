@@ -65,7 +65,7 @@ function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
 
   return (
     <div
-      className="fixed bottom-20 right-4 z-[9999999] flex flex-col gap-2 pointer-events-none"
+      className="fixed bottom-20 right-4 z-50 flex flex-col gap-2 pointer-events-none"
       style={{ maxWidth: '400px' }}
     >
       {toasts.map(toast => (

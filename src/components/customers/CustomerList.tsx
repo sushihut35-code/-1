@@ -151,7 +151,7 @@ export function CustomerList() {
                     <p className="text-sm text-gray-600">📍 {customer.address}</p>
                   )}
                   <div className="mt-2 inline-block bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-1">
-                    <p className="text-xs text-gray-600">💰 累計</p>
+                    <p className="text-xs text-gray-600">💰 支払い済み合計</p>
                     <p className="text-sm font-bold text-yellow-600">¥{((customer.totalAmount || 0)).toLocaleString()}</p>
                   </div>
                 </div>

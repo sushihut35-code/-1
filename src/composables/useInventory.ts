@@ -57,9 +57,11 @@ export async function updateItem(id: number, updates: Partial<Item>): Promise<vo
 
 // アイテムを削除
 export async function deleteItem(id: number): Promise<void> {
-  await db.items.delete(id);
-  // 関連する在庫履歴も削除
-  await db.stockHistory.where('itemId').equals(id).delete();
+  await db.transaction('rw', [db.items, db.stockHistory], async () => {
+    await db.items.delete(id);
+    // 関連する在庫履歴も削除
+    await db.stockHistory.where('itemId').equals(id).delete();
+  });
 }
 
 // 入庫を記録

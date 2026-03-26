@@ -19,10 +19,42 @@ export function useAllCustomerItems() {
 
 // 顧客の商品を追加
 export async function addCustomerItem(customerId: number, item: Item): Promise<number> {
-  return await db.transaction('rw', [db.customerItems, db.customers], async () => {
+  if (!item.id) {
+    throw new Error('商品IDがありません');
+  }
+
+  return await db.transaction('rw', [db.customerItems, db.customers, db.items, db.stockHistory], async () => {
+    // 在庫チェック
+    const stockItem = await db.items.get(item.id);
+    if (!stockItem) {
+      throw new Error('商品が見つかりません');
+    }
+
+    if (stockItem.quantity <= 0) {
+      throw new Error('在庫が不足しています');
+    }
+
+    // 在庫を減らす
+    const newQuantity = stockItem.quantity - 1;
+    await db.items.update(item.id, {
+      quantity: newQuantity,
+      updatedAt: new Date()
+    });
+
+    // 在庫履歴を追加
+    await db.stockHistory.add({
+      itemId: item.id,
+      type: 'out',
+      quantity: -1,
+      previousQuantity: stockItem.quantity,
+      newQuantity: newQuantity,
+      notes: `顧客キープ: ${item.name}`,
+      createdAt: new Date()
+    });
+
     const itemId = await db.customerItems.add({
       customerId,
-      itemId: item.id!,
+      itemId: item.id,
       itemName: item.name,
       itemImage: item.image || '',
       itemPrice: item.price || 0,
@@ -45,9 +77,30 @@ export async function addCustomerItem(customerId: number, item: Item): Promise<n
 
 // 顧客の商品を削除
 export async function deleteCustomerItem(id: number): Promise<void> {
-  await db.transaction('rw', [db.customerItems, db.customers], async () => {
+  await db.transaction('rw', [db.customerItems, db.customers, db.items, db.stockHistory], async () => {
     const item = await db.customerItems.get(id);
     if (!item) return;
+
+    // 在庫を戻す
+    const stockItem = await db.items.get(item.itemId);
+    if (stockItem) {
+      const newQuantity = stockItem.quantity + 1;
+      await db.items.update(item.itemId, {
+        quantity: newQuantity,
+        updatedAt: new Date()
+      });
+
+      // 在庫履歴を追加
+      await db.stockHistory.add({
+        itemId: item.itemId,
+        type: 'in',
+        quantity: 1,
+        previousQuantity: stockItem.quantity,
+        newQuantity: newQuantity,
+        notes: `キープキャンセル: ${item.itemName}`,
+        createdAt: new Date()
+      });
+    }
 
     const customer = await db.customers.get(item.customerId);
     if (customer && customer.totalAmount) {

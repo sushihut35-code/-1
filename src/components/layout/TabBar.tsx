@@ -18,7 +18,7 @@ export function TabBar() {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40" aria-label="メインナビゲーション">
       <div className="flex justify-around items-center h-16">
         {tabs.map((tab) => {
           const isActive = location.pathname === tab.path;
@@ -29,12 +29,15 @@ export function TabBar() {
               className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
                 isActive ? 'text-primary-600' : 'text-gray-500'
               }`}
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={tab.label}
             >
               <svg
                 className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"

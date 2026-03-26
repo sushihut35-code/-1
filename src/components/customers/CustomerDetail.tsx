@@ -113,20 +113,28 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
           {customer.email && <p className="text-sm text-gray-600">📧 {customer.email}</p>}
           {customer.phone && <p className="text-sm text-gray-600">📞 {customer.phone}</p>}
           {customer.address && <p className="text-sm text-gray-600">📍 {customer.address}</p>}
-          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3">
-            <p className="text-sm font-semibold text-gray-900">💰 キープ累計額</p>
-            <p className="text-2xl font-bold text-yellow-600">
-              ¥{((customer.totalAmount || 0) + (customerItems?.reduce((sum, item) => sum + (item.itemPrice || 0), 0) || 0)).toLocaleString()}
-            </p>
+          <div className="flex gap-2">
+            <div className="bg-green-50 border border-green-300 rounded-lg p-3 flex-1">
+              <p className="text-sm font-semibold text-gray-900">💰 支払い済み合計</p>
+              <p className="text-2xl font-bold text-green-600">
+                ¥{((customer.totalAmount || 0)).toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3 flex-1">
+              <p className="text-sm font-semibold text-gray-900">💰 現在のキープ金額</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                ¥{(customerItems?.reduce((sum, item) => sum + (item.itemPrice || 0), 0) || 0).toLocaleString()}
+              </p>
+            </div>
           </div>
           {customer.notes && <p className="text-sm text-gray-600">📝 {customer.notes}</p>}
         </div>
       </div>
 
-      {/* 購入画像（未支払い商品） */}
+      {/* キープ中の商品（未支払い商品） */}
       <div className="bg-white rounded-lg shadow-md p-6" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">🛒 購入画像</h3>
+          <h3 className="text-lg font-semibold text-gray-900">🛒 キープ中の商品</h3>
           <div className="flex gap-2">
             <button
               onClick={() => setShowAddItem(!showAddItem)}

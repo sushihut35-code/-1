@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Item } from '../../db/db';
 import { ButtonLoading } from '../common/LoadingSpinner';
 
@@ -124,7 +124,7 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
     setFormData(prev => ({ ...prev, image: '' }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -148,19 +148,19 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
         right: '0',
         bottom: '0',
         zIndex: 999999,
-        backgroundColor: '#000000'
+        backgroundColor: 'rgba(0, 0, 0, 0.3)'
       }}
     >
-      <div className="bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto text-white">
+      <div className="bg-white rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="p-6">
-          <h2 className="text-xl font-bold text-white mb-4">
-            {item ? 'アイテムを編集' : '新規アイテム'}
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            {item ? '商品を編集' : '新規商品'}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* 画像アップロード - 最初に配置 */}
             <div>
-              <label className="block text-sm font-medium mb-2" style={{color: '#FFD700', fontSize: '16px', fontWeight: 'bold'}}>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">
                 📷 商品画像
               </label>
               {imagePreview ? (
@@ -213,7 +213,7 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
             </div>
 
             <div>
-              <label htmlFor="name" className="block text-sm font-medium !text-white mb-1" style={{color: '#FFD700', fontSize: '16px', fontWeight: 'bold'}}>
+              <label htmlFor="name" className="block text-sm font-semibold mb-1 text-gray-700">
                 商品名 <span className="text-red-600">*</span>
               </label>
               <input
@@ -223,13 +223,13 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="商品名を入力"
               />
             </div>
 
             <div>
-              <label htmlFor="sku" className="block text-sm font-medium mb-1" style={{color: '#FFD700', fontSize: '16px', fontWeight: 'bold'}}>
+              <label htmlFor="sku" className="block text-sm font-semibold mb-1 text-gray-700">
                 SKU
               </label>
               <input
@@ -238,14 +238,14 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                 name="sku"
                 value={formData.sku}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="SKUを入力"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="quantity" className="block text-sm font-medium mb-1" style={{color: '#FFD700', fontSize: '16px', fontWeight: 'bold'}}>
+                <label htmlFor="quantity" className="block text-sm font-semibold mb-1 text-gray-700">
                   在庫数 <span className="text-red-600">*</span>
                 </label>
                 <input
@@ -257,12 +257,12 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                   required
                   min="0"
                   step="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 
               <div>
-                <label htmlFor="minStock" className="block text-sm font-medium mb-1" style={{color: '#FFD700', fontSize: '16px', fontWeight: 'bold'}}>
+                <label htmlFor="minStock" className="block text-sm font-semibold mb-1 text-gray-700">
                   最小在庫 <span className="text-red-600">*</span>
                 </label>
                 <input
@@ -274,14 +274,14 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                   required
                   min="0"
                   step="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="cost" className="block text-sm font-medium mb-1" style={{color: '#FFD700', fontSize: '16px', fontWeight: 'bold'}}>
+                <label htmlFor="cost" className="block text-sm font-semibold mb-1 text-gray-700">
                   原価
                 </label>
                 <input
@@ -292,12 +292,12 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                   onChange={handleChange}
                   min="0"
                   step="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 
               <div>
-                <label htmlFor="price" className="block text-sm font-bold mb-1" style={{color: '#FFD700', fontSize: '16px'}}>
+                <label htmlFor="price" className="block text-sm font-semibold mb-1 text-gray-700">
                   💰 売価（販売価格） <span className="text-red-600">*</span>
                 </label>
                 <input
@@ -308,13 +308,13 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                   onChange={handleChange}
                   min="0"
                   step="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="unit" className="block text-sm font-medium mb-1" style={{color: '#FFD700', fontSize: '16px', fontWeight: 'bold'}}>
+              <label htmlFor="unit" className="block text-sm font-semibold mb-1 text-gray-700">
                 単位
               </label>
               <input
@@ -323,13 +323,13 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                 name="unit"
                 value={formData.unit}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="個、箱、kgなど"
               />
             </div>
 
             <div>
-              <label htmlFor="location" className="block text-sm font-medium mb-1" style={{color: '#FFD700', fontSize: '16px', fontWeight: 'bold'}}>
+              <label htmlFor="location" className="block text-sm font-semibold mb-1 text-gray-700">
                 保管場所
               </label>
               <input
@@ -338,13 +338,13 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="A-1-1など"
               />
             </div>
 
             <div>
-              <label htmlFor="supplier" className="block text-sm font-medium mb-1" style={{color: '#FFD700', fontSize: '16px', fontWeight: 'bold'}}>
+              <label htmlFor="supplier" className="block text-sm font-semibold mb-1 text-gray-700">
                 サプライヤー
               </label>
               <input
@@ -353,13 +353,13 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                 name="supplier"
                 value={formData.supplier}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="サプライヤー名"
               />
             </div>
 
             <div>
-              <label htmlFor="barcode" className="block text-sm font-medium mb-1" style={{color: '#FFD700', fontSize: '16px', fontWeight: 'bold'}}>
+              <label htmlFor="barcode" className="block text-sm font-semibold mb-1 text-gray-700">
                 バーコード
               </label>
               <input
@@ -368,7 +368,7 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                 name="barcode"
                 value={formData.barcode}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="バーコード番号"
               />
             </div>
@@ -377,16 +377,14 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex-1 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-lg font-semibold"
-                style={{ padding: '24px 16px' }}
+                className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSubmitting}
               >
                 キャンセル
               </button>
               <button
                 type="submit"
-                className="flex-1 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg font-semibold"
-                style={{ padding: '24px 16px', backgroundColor: '#2563eb' }}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center text-lg font-semibold"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? <ButtonLoading message="保存中..." /> : '保存'}
