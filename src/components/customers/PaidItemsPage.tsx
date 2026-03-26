@@ -23,7 +23,7 @@ export function PaidItemsPage() {
             if (customerPaidItems.length === 0) return null;
 
             return (
-              <div key={customer.id} className="bg-white rounded-lg shadow-md p-6">
+              <div key={customer.id} className="bg-white rounded-lg shadow-md p-6" style={{ backgroundColor: '#FFFFFF' }}>
                 <div className="flex items-center gap-3 mb-4">
                   {customer.image ? (
                     <img

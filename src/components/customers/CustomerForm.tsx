@@ -138,10 +138,10 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
         right: '0',
         bottom: '0',
         zIndex: 999999,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+        backgroundColor: 'rgba(0, 0, 0, 0.3)'
       }}
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             {customer ? '顧客を編集' : '新規顧客'}

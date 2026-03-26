@@ -71,7 +71,7 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
   return (
     <div className="space-y-6">
       {/* 顧客情報 */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow-md p-6" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-start gap-4">
             {customer.image ? (
@@ -124,7 +124,7 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
       </div>
 
       {/* 購入画像（未支払い商品） */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow-md p-6" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">🛒 購入画像</h3>
           <div className="flex gap-2">
@@ -207,7 +207,7 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
       </div>
 
       {/* 支払い済み商品 */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow-md p-6" style={{ backgroundColor: '#FFFFFF' }}>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">✅ 支払い済み商品</h3>
         {(paidItems?.length || 0) === 0 ? (
           <p className="text-center text-gray-500 py-8">支払い済み商品がありません</p>
