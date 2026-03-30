@@ -15,13 +15,11 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
     email: customer?.email || '',
     phone: customer?.phone || '',
     address: customer?.address || '',
+    totalAmount: customer?.totalAmount || 0,
     notes: customer?.notes || '',
-    image: customer?.image || '',
   });
 
-  const [imagePreview, setImagePreview] = useState(customer?.image || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCompressing, setIsCompressing] = useState(false);
   const { showToast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -30,98 +28,6 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
       ...prev,
       [name]: value
     }));
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // 画像ファイルかチェック
-    if (!file.type.startsWith('image/')) {
-      showToast('画像ファイルを選択してください', 'error');
-      return;
-    }
-
-    // ファイルサイズが2MBを超える場合は圧縮・縮小
-    if (file.size > 2 * 1024 * 1024) {
-      setIsCompressing(true);
-      showToast('画像を圧縮しています...', 'info');
-      compressImage(file);
-    } else {
-      // 小さい場合はそのまま使用
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setImagePreview(base64);
-        setFormData(prev => ({ ...prev, image: base64 }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const compressImage = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        // Canvasを作成して画像をリサイズ
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-
-        if (!ctx) return;
-
-        // 最大サイズを設定（幅800px、高さ600px）
-        const maxWidth = 800;
-        const maxHeight = 600;
-
-        let width = img.width;
-        let height = img.height;
-
-        // アスペクト比を維持しながらリサイズ
-        if (width > height) {
-          if (width > maxWidth) {
-            height *= maxWidth / width;
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        // 画像を描画
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // JPEGとしてエクスポート（quality 0.7で圧縮）
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-
-        setImagePreview(compressedDataUrl);
-        setFormData(prev => ({ ...prev, image: compressedDataUrl }));
-
-        const originalSize = Math.round(file.size / 1024);
-        const compressedSize = Math.round(compressedDataUrl.length * 0.75 / 1024);
-
-        console.log('圧縮完了:', {
-          元のサイズ: originalSize + 'KB',
-          圧縮後のサイズ: compressedSize + 'KB',
-          解像度: width + 'x' + height
-        });
-
-        setIsCompressing(false);
-        showToast(`画像を圧縮しました（${originalSize}KB → ${compressedSize}KB）`, 'success');
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveImage = () => {
-    setImagePreview('');
-    setFormData(prev => ({ ...prev, image: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -235,63 +141,25 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
               />
             </div>
 
-            {/* 画像アップロード */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                顧客画像
+              <label htmlFor="totalAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                支払い済み合計
               </label>
-              {imagePreview ? (
-                <div className="space-y-2">
-                  <img
-                    src={imagePreview}
-                    alt="プレビュー"
-                    className="w-32 h-32 object-cover rounded-lg border border-gray-300"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                  >
-                    画像を削除
-                  </button>
-                </div>
-              ) : isCompressing ? (
-                <div className="border-2 border-dashed rounded-md text-center py-8 bg-gray-50">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-2"></div>
-                    <p className="text-sm text-gray-600">画像を圧縮中...</p>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="border-2 border-dashed rounded-md text-center transition-colors"
-                  style={{ borderColor: '#d1d5db', backgroundColor: '#f9fafb', padding: '12px' }}
-                >
-                  <input
-                    type="file"
-                    id="image"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="image"
-                    className="cursor-pointer block"
-                  >
-                    <div style={{ padding: '8px 0' }}>
-                      <svg className="mx-auto" style={{ height: '32px', width: '32px' }} stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <span className="block" style={{ marginTop: '8px', fontSize: '14px', fontWeight: '500', color: '#111827' }}>
-                        ここをクリック
-                      </span>
-                      <span className="block" style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
-                        PNG, JPG, GIF （2MB以上は自動圧縮）
-                      </span>
-                    </div>
-                  </label>
-                </div>
-              )}
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                  ¥
+                </span>
+                <input
+                  type="number"
+                  id="totalAmount"
+                  name="totalAmount"
+                  value={formData.totalAmount}
+                  onChange={handleChange}
+                  min={0}
+                  step={1}
+                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
             </div>
 
             <div>

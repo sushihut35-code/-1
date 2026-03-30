@@ -1,4 +1,5 @@
-import { useAllPaidItems, useCustomers } from '../../composables/useCustomerItems';
+import { useAllPaidItems } from '../../composables/useCustomerItems';
+import { useCustomers } from '../../composables/useCustomers';
 
 export function PaidItemsPage() {
   const paidItems = useAllPaidItems();

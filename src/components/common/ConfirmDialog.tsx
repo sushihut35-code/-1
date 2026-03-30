@@ -4,7 +4,7 @@ interface ConfirmDialogProps {
   isOpen: boolean;
   title: string;
   message: string;
-  details?: string;
+  details?: string | ReactNode;
   confirmText?: string;
   cancelText?: string;
   type?: 'danger' | 'warning' | 'info';
@@ -71,9 +71,9 @@ export function ConfirmDialog({
             </h3>
             <p className="text-sm text-gray-700 mb-1">{message}</p>
             {details && (
-              <p className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded">
+              <div className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded">
                 {details}
-              </p>
+              </div>
             )}
           </div>
         </div>

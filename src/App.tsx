@@ -10,9 +10,11 @@ import { SaleList } from './components/sales/SaleList';
 import { CustomerList } from './components/customers/CustomerList';
 import { PaidItemsPage } from './components/customers/PaidItemsPage';
 import { Analytics } from './components/analytics/Analytics';
+import { BackupManager } from './components/BackupManager';
 import { ToastProvider } from './components/common/Toast';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { initDatabase } from './db/db';
+// import { useAutoBackup } from './composables/useAutoBackup'; // 自動バックアップは一時無効化
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +26,9 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // 自動バックアップを有効化（一時無効化）
+  // useAutoBackup();
+
   useEffect(() => {
     initDatabase();
   }, []);
@@ -44,7 +49,8 @@ function App() {
                   <Route path="/customers" element={<CustomerList />} />
                   <Route path="/paid-items" element={<PaidItemsPage />} />
                   <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/settings" element={<div className="p-6"><h2 className="text-2xl font-bold">設定（開発中）</h2></div>} />
+                  <Route path="/settings" element={<BackupManager />} />
+                  <Route path="/backup" element={<BackupManager />} />
                 </Routes>
               </main>
             </div>

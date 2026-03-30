@@ -77,8 +77,10 @@ export interface Customer {
   email?: string;
   phone?: string;
   address?: string;
-  image?: string;
-  totalAmount?: number; // キープ累計額
+  image?: string; // 互換性維持のため残す（非推奨）
+  images?: string[]; // キープ画像（未払い商品画像）の配列
+  totalAmount?: number; // 支払い済み合計
+  keepAmount?: number; // キープ累積金額
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -137,6 +139,7 @@ export interface CustomerItem {
   itemName: string;
   itemImage: string;
   itemPrice: number; // 商品価格
+  evidenceImages?: string[]; // 購入証拠画像（配信でのスクショなど）
   addedAt: Date;
 }
 
@@ -148,6 +151,7 @@ export interface PaidItem {
   itemName: string;
   itemImage: string;
   itemPrice: number; // 商品価格
+  evidenceImages?: string[]; // 購入証拠画像
   paidAt: Date;
 }
 
@@ -184,6 +188,110 @@ export class InventoryDatabase extends Dexie {
       syncLog: '++id, action, tableName, recordId, timestamp, synced',
       customerItems: '++id, customerId, addedAt',
       paidItems: '++id, customerId, paidAt'
+    });
+
+    // バージョン2: 顧客テーブルにkeepAmountフィールドを追加
+    this.version(2).stores({
+      items: '++id, name, sku, categoryId, quantity, location, supplier, barcode, createdAt, updatedAt',
+      categories: '++id, &name',
+      stockHistory: '++id, itemId, type, createdAt',
+      sales: '++id, itemId, customerId, paymentMethod, status, createdAt',
+      saleItems: '++id, saleId, itemId',
+      customers: '++id, &name, email, phone, createdAt, keepAmount',
+      suppliers: '++id, &name',
+      locations: '++id, &name, parentLocationId',
+      notifications: '++id, type, itemId, read, createdAt',
+      userPreferences: 'key, value',
+      syncLog: '++id, action, tableName, recordId, timestamp, synced',
+      customerItems: '++id, customerId, addedAt',
+      paidItems: '++id, customerId, paidAt'
+    }).upgrade(tx => {
+      // 既存の顧客データのkeepAmountを0で初期化
+      return tx.table('customers').toCollection().modify(customer => {
+        if (!customer.keepAmount) {
+          customer.keepAmount = 0;
+        }
+      });
+    });
+
+    // バージョン3: 顧客テーブルにimagesフィールドを追加（複数画像対応）
+    this.version(3).stores({
+      items: '++id, name, sku, categoryId, quantity, location, supplier, barcode, createdAt, updatedAt',
+      categories: '++id, &name',
+      stockHistory: '++id, itemId, type, createdAt',
+      sales: '++id, itemId, customerId, paymentMethod, status, createdAt',
+      saleItems: '++id, saleId, itemId',
+      customers: '++id, &name, email, phone, createdAt, keepAmount',
+      suppliers: '++id, &name',
+      locations: '++id, &name, parentLocationId',
+      notifications: '++id, type, itemId, read, createdAt',
+      userPreferences: 'key, value',
+      syncLog: '++id, action, tableName, recordId, timestamp, synced',
+      customerItems: '++id, customerId, addedAt',
+      paidItems: '++id, customerId, paidAt'
+    }).upgrade(tx => {
+      // 既存の顧客データのimageをimages配列に変換
+      return tx.table('customers').toCollection().modify(customer => {
+        if (customer.image && !customer.images) {
+          customer.images = [customer.image];
+        } else if (!customer.images) {
+          customer.images = [];
+        }
+      });
+    });
+
+    // バージョン4: CustomerItemにevidenceImagesフィールドを追加（購入証拠画像）
+    this.version(4).stores({
+      items: '++id, name, sku, categoryId, quantity, location, supplier, barcode, createdAt, updatedAt',
+      categories: '++id, &name',
+      stockHistory: '++id, itemId, type, createdAt',
+      sales: '++id, itemId, customerId, paymentMethod, status, createdAt',
+      saleItems: '++id, saleId, itemId',
+      customers: '++id, &name, email, phone, createdAt, keepAmount',
+      suppliers: '++id, &name',
+      locations: '++id, &name, parentLocationId',
+      notifications: '++id, type, itemId, read, createdAt',
+      userPreferences: 'key, value',
+      syncLog: '++id, action, tableName, recordId, timestamp, synced',
+      customerItems: '++id, customerId, addedAt',
+      paidItems: '++id, customerId, paidAt'
+    }).upgrade(tx => {
+      // 既存のCustomerItemデータのevidenceImagesを空配列で初期化
+      return tx.table('customerItems').toCollection().modify(item => {
+        if (!item.evidenceImages) {
+          item.evidenceImages = [];
+        }
+      });
+    });
+
+    // バージョン5: PaidItemにevidenceImagesフィールドを追加
+    this.version(5).stores({
+      items: '++id, name, sku, categoryId, quantity, location, supplier, barcode, createdAt, updatedAt',
+      categories: '++id, &name',
+      stockHistory: '++id, itemId, type, createdAt',
+      sales: '++id, itemId, customerId, paymentMethod, status, createdAt',
+      saleItems: '++id, saleId, itemId',
+      customers: '++id, &name, email, phone, createdAt, keepAmount',
+      suppliers: '++id, &name',
+      locations: '++id, &name, parentLocationId',
+      notifications: '++id, type, itemId, read, createdAt',
+      userPreferences: 'key, value',
+      syncLog: '++id, action, tableName, recordId, timestamp, synced',
+      customerItems: '++id, customerId, addedAt',
+      paidItems: '++id, customerId, paidAt'
+    }).upgrade(tx => {
+      // 既存のPaidItemデータのevidenceImagesを空配列で初期化
+      return tx.table('paidItems').toCollection().modify(item => {
+        if (!item.evidenceImages) {
+          item.evidenceImages = [];
+        }
+      });
+    });
+
+    // 既存のDBを削除してクリーンインストール
+    this.on('populate', () => {
+      // DBが正常に作成されたことを確認
+      console.log('Database populated successfully');
     });
   }
 

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Customer } from '../../db/db';
 import { addCustomer, updateCustomer, deleteCustomer, useCustomers } from '../../composables/useCustomers';
 import { useToast } from '../common/Toast';
@@ -7,6 +8,7 @@ import { CustomerForm } from './CustomerForm';
 import { CustomerDetail } from './CustomerDetail';
 
 export function CustomerList() {
+  const [searchParams] = useSearchParams();
   const customers = useCustomers();
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | undefined>();
@@ -14,6 +16,13 @@ export function CustomerList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<Customer | undefined>();
   const { showToast } = useToast();
+
+  // URLパラメータをチェックして新規顧客フォームを自動表示
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setShowForm(true);
+    }
+  }, [searchParams]);
 
   const filteredCustomers = customers?.filter(customer =>
     customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -108,28 +117,12 @@ export function CustomerList() {
                 onClick={() => openCustomerDetail(customer)}
                 className="bg-white rounded-lg shadow-md p-4 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-start gap-3">
-                    {/* 顧客画像 */}
-                    {customer.image ? (
-                      <img
-                        src={customer.image}
-                        alt={customer.name}
-                        className="w-16 h-16 object-cover rounded-lg border border-gray-300"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">{customer.name}</h3>
+                    {customer.nickname && (
+                      <p className="text-sm text-gray-500">💬 {customer.nickname}</p>
                     )}
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">{customer.name}</h3>
-                      {customer.nickname && (
-                        <p className="text-sm text-gray-500">💬 {customer.nickname}</p>
-                      )}
-                    </div>
                   </div>
                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <button
@@ -146,26 +139,12 @@ export function CustomerList() {
                     </button>
                   </div>
                 </div>
-                <div className="ml-[76px]">
-                  {customer.email && (
-                    <p className="text-sm text-gray-600">📧 {customer.email}</p>
-                  )}
-                  {customer.phone && (
-                    <p className="text-sm text-gray-600">📞 {customer.phone}</p>
-                  )}
-                  {customer.address && (
-                    <p className="text-sm text-gray-600">📍 {customer.address}</p>
-                  )}
-                  <div className="mt-2 inline-block bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-1">
+                <div className="mt-3">
+                  <div className="inline-block bg-green-50 border border-green-300 rounded-lg px-3 py-1">
                     <p className="text-xs text-gray-600">💰 支払い済み合計</p>
-                    <p className="text-sm font-bold text-yellow-600">¥{((customer.totalAmount || 0)).toLocaleString()}</p>
+                    <p className="text-sm font-bold text-green-600">¥{((customer.totalAmount || 0)).toLocaleString()}</p>
                   </div>
                 </div>
-                {customer.notes && (
-                  <div className="mt-2 pt-2 border-t border-gray-200">
-                    <p className="text-sm text-gray-600">📝 {customer.notes}</p>
-                  </div>
-                )}
               </div>
             ))
           )}

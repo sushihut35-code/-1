@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Item } from '../../db/db';
 import { ButtonLoading } from '../common/LoadingSpinner';
 import { useToast } from '../common/Toast';
+import { generateImage } from '../../lib/gemini';
 
 interface ItemFormProps {
   item?: Item;
@@ -29,6 +30,8 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
   const [isImageExpanded, setIsImageExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
   const { showToast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -133,6 +136,36 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
     setFormData(prev => ({ ...prev, image: '' }));
   };
 
+  const handleGenerateImage = async () => {
+    if (!formData.name && !aiPrompt) {
+      showToast('商品名またはプロンプトを入力してください', 'error');
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    showToast('画像を生成しています...', 'info');
+
+    try {
+      const prompt = aiPrompt || `Professional product photo of ${formData.name}`;
+      const imageUrl = await generateImage({
+        prompt,
+        itemName: formData.name,
+        style: 'product'
+      });
+
+      setImagePreview(imageUrl);
+      setFormData(prev => ({ ...prev, image: imageUrl }));
+      showToast('画像を生成しました！', 'success');
+      setAiPrompt(''); // Clear prompt after successful generation
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+      const errorMessage = error instanceof Error ? error.message : '画像の生成に失敗しました';
+      showToast(errorMessage, 'error');
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -227,6 +260,45 @@ export function ItemForm({ item, onSubmit, onCancel }: ItemFormProps) {
                   </label>
                 </div>
               )}
+            </div>
+
+            {/* AI画像生成セクション */}
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 border border-purple-200">
+              <label className="block text-sm font-semibold mb-2 text-gray-700">
+                🤖 AIで画像生成
+              </label>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="商品名を入力すると自動生成されます（例：赤いリンゴ、高級時計）"
+                  className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-400 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={handleGenerateImage}
+                  disabled={isGeneratingImage || (!formData.name && !aiPrompt)}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 transition-all disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed font-semibold flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                >
+                  {isGeneratingImage ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      生成中...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      AIで画像を生成
+                    </>
+                  )}
+                </button>
+                <p className="text-xs text-gray-600 text-center">
+                  ※ 画像生成には数秒〜数十秒かかります
+                </p>
+              </div>
             </div>
 
             <div>
