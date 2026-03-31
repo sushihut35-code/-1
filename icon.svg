@@ -1,0 +1,12 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" fill="#0ea5e9" rx="100"/>
+  <g fill="white">
+    <!-- Box icon -->
+    <rect x="128" y="180" width="256" height="180" rx="10" opacity="0.3"/>
+    <path d="M256 140 L140 200 L140 360 L372 360 L372 200 Z" stroke="white" stroke-width="20" fill="none" stroke-linejoin="round"/>
+    <path d="M256 140 L256 360" stroke="white" stroke-width="20"/>
+    <path d="M140 200 L372 200" stroke="white" stroke-width="20"/>
+    <!-- Yen symbol -->
+    <text x="256" y="310" font-size="120" font-weight="bold" text-anchor="middle" fill="white">¥</text>
+  </g>
+</svg>

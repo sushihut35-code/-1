@@ -1,0 +1,1 @@
+{"name":"在庫アプリ","short_name":"在庫アプリ","description":"モバイルファーストの在庫・売上管理アプリ","start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#0ea5e9","lang":"en","scope":"/-1/","orientation":"any","icons":[{"src":"/icon-192x192.png","sizes":"192x192","type":"image/png"},{"src":"/icon-512x512.png","sizes":"512x512","type":"image/png"}]}
