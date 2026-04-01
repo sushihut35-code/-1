@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Customer } from '../../db/db';
 import { useCustomerItems, deleteCustomerItem, markAsPaid, markSelectedAsPaid, usePaidItems, addEvidenceImage, removeEvidenceImage, addKeepItemWithImage } from '../../composables/useCustomerItems';
+import { useCustomerShippingLabels } from '../../composables/useShippingLabels';
 import { useToast } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { ShippingLabelGenerator } from './ShippingLabelGenerator';
+import { generateShippingLabelPDF } from '../../utils/shippingLabelPDF';
 
 interface CustomerDetailProps {
   customer: Customer;
@@ -13,6 +16,7 @@ interface CustomerDetailProps {
 export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailProps) {
   const customerItems = useCustomerItems(customer.id);
   const paidItems = usePaidItems(customer.id);
+  const shippingLabels = useCustomerShippingLabels(customer.id);
   const [showAddItem, setShowAddItem] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPaidConfirm, setShowPaidConfirm] = useState(false);
@@ -25,6 +29,7 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
     itemImage: '' as string | null,
     evidenceImages: [] as string[]
   });
+  const [showShippingLabelModal, setShowShippingLabelModal] = useState(false);
   const { showToast } = useToast();
 
   // 現在の保有額をstateに保存（強制的に再レンダリング）
@@ -186,6 +191,22 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
     setShowEvidenceDialog(true);
   };
 
+  // 送り状を再生成
+  const handleRegenerateLabel = async (labelId: number) => {
+    try {
+      const { db } = await import('../../db/db');
+      const label = await db.shippingLabels.get(labelId);
+      if (label) {
+        generateShippingLabelPDF(label);
+        await db.shippingLabels.update(labelId, { status: 'printed' });
+        showToast('送り状を再生成しました', 'success');
+      }
+    } catch (error) {
+      console.error('Failed to regenerate shipping label:', error);
+      showToast('送り状の再生成に失敗しました', 'error');
+    }
+  };
+
   // 支払い済み商品を日付でグループ化
   const groupPaidItemsByDate = (items: typeof paidItems) => {
     if (!items) return {};
@@ -272,7 +293,7 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
               </p>
             </div>
             <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3">
-              <p className="text-sm font-semibold text-gray-900">💰 現在の保有額</p>
+              <p className="text-sm font-semibold text-gray-900">💰 現在のキープ額</p>
               <p className="text-2xl font-bold text-yellow-600" key={`keep-amount-${currentKeepAmount}`}>
                 ¥{currentKeepAmount.toLocaleString()}
               </p>
@@ -587,7 +608,17 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
 
       {/* 支払い済み商品 */}
       <div className="bg-white rounded-lg shadow-md p-6" style={{ backgroundColor: '#FFFFFF' }}>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">✅ 支払い済み商品</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">✅ 支払い済み商品</h3>
+          {(paidItems?.length || 0) > 0 && (
+            <button
+              onClick={() => setShowShippingLabelModal(true)}
+              className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+            >
+              📦 送り状を作成
+            </button>
+          )}
+        </div>
         {(paidItems?.length || 0) === 0 ? (
           <p className="text-center text-gray-500 py-8">支払い済み商品がありません</p>
         ) : (
@@ -766,6 +797,75 @@ export function CustomerDetail({ customer, onEdit, onDelete }: CustomerDetailPro
                   </div>
                 </label>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 送り状一覧 */}
+      <div className="bg-white rounded-lg shadow-md p-6" style={{ backgroundColor: '#FFFFFF' }}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">📦 送り状履歴</h3>
+        {(!shippingLabels || shippingLabels.length === 0) ? (
+          <p className="text-center text-gray-500 py-8">送り状がありません</p>
+        ) : (
+          <div className="space-y-3">
+            {shippingLabels.map((label) => (
+              <div key={label.id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {label.carrier === 'yuupack' ? '📦 ゆうパック' : '🚚 クロネコヤマト'}
+                    </p>
+                    <p className="text-xs text-gray-600">送り状番号: {label.labelNumber}</p>
+                  </div>
+                  <span className={`px-2 py-1 text-xs rounded ${
+                    label.status === 'draft'
+                      ? 'bg-gray-100 text-gray-700'
+                      : label.status === 'printed'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {label.status === 'draft' ? '作成中' : label.status === 'printed' ? '印刷済' : '発送済'}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-600 space-y-1 mb-3">
+                  <p>📅 {new Date(label.shippingDate).toLocaleDateString('ja-JP')}</p>
+                  <p>📦 {label.items.length}点の商品</p>
+                  <p>💰 ¥{label.totalValue.toLocaleString()}</p>
+                </div>
+                <button
+                  onClick={() => label.id && handleRegenerateLabel(label.id)}
+                  className="w-full px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
+                >
+                  📄 PDFを再ダウンロード
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 送り状作成モーダル */}
+      {showShippingLabelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">📦 送り状を作成</h3>
+                <button
+                  onClick={() => setShowShippingLabelModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <ShippingLabelGenerator
+                customerId={customer.id}
+                customerName={customer.name}
+                customerAddress={customer.address}
+                customerPhone={customer.phone}
+                onClose={() => setShowShippingLabelModal(false)}
+              />
             </div>
           </div>
         </div>

@@ -155,6 +155,33 @@ export interface PaidItem {
   paidAt: Date;
 }
 
+// 送り状商品明細
+export interface ShippingLabelItem {
+  paidItemId: number;
+  itemName: string;
+  itemPrice: number;
+}
+
+// 送り状
+export interface ShippingLabel {
+  id?: number;
+  customerId: number;
+  labelNumber: string; // 送り状番号（日付+ランダム）
+  carrier: 'yuupack' | 'yamato'; // 配送業者
+  recipientName: string; // お届け先名前
+  recipientAddress: string; // お届け先住所
+  recipientPhone: string; // お届け先電話番号
+  senderName: string; // 送り元名前
+  senderAddress: string; // 送り元住所
+  senderPhone: string; // 送り元電話番号
+  items: ShippingLabelItem[]; // 商品明細
+  totalValue: number; // 合計金額
+  shippingDate: Date; // 発送日
+  status: 'draft' | 'printed' | 'shipped'; // ステータス
+  notes?: string; // メモ
+  createdAt: Date;
+}
+
 export class InventoryDatabase extends Dexie {
   items!: any;
   categories!: any;
@@ -169,6 +196,7 @@ export class InventoryDatabase extends Dexie {
   syncLog!: any;
   customerItems!: any; // 顧客購入商品
   paidItems!: any; // 支払い済み商品
+  shippingLabels!: any; // 送り状
 
   constructor() {
     super('InventoryDatabase');
@@ -286,6 +314,24 @@ export class InventoryDatabase extends Dexie {
           item.evidenceImages = [];
         }
       });
+    });
+
+    // バージョン6: 送り状テーブルを追加
+    this.version(6).stores({
+      items: '++id, name, sku, categoryId, quantity, location, supplier, barcode, createdAt, updatedAt',
+      categories: '++id, &name',
+      stockHistory: '++id, itemId, type, createdAt',
+      sales: '++id, itemId, customerId, paymentMethod, status, createdAt',
+      saleItems: '++id, saleId, itemId',
+      customers: '++id, &name, email, phone, createdAt, keepAmount',
+      suppliers: '++id, &name',
+      locations: '++id, &name, parentLocationId',
+      notifications: '++id, type, itemId, read, createdAt',
+      userPreferences: 'key, value',
+      syncLog: '++id, action, tableName, recordId, timestamp, synced',
+      customerItems: '++id, customerId, addedAt',
+      paidItems: '++id, customerId, paidAt',
+      shippingLabels: '++id, customerId, labelNumber, carrier, status, shippingDate, createdAt'
     });
 
     // 既存のDBを削除してクリーンインストール

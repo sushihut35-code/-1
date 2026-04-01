@@ -19,6 +19,7 @@ export interface BackupData {
     syncLog: any[];
     customerItems: any[];
     paidItems: any[];
+    shippingLabels: any[];
   };
 }
 
@@ -41,6 +42,7 @@ export async function createBackup(): Promise<BackupData> {
       syncLog: await db.syncLog.toArray(),
       customerItems: await db.customerItems.toArray(),
       paidItems: await db.paidItems.toArray(),
+      shippingLabels: await db.shippingLabels.toArray(),
     }
   };
 
@@ -129,7 +131,8 @@ export async function restoreBackup(backup: BackupData): Promise<void> {
       db.userPreferences,
       db.syncLog,
       db.customerItems,
-      db.paidItems
+      db.paidItems,
+      db.shippingLabels
     ], async () => {
       // 各テーブルにデータを復元
       if (backup.tables.items.length > 0) await db.items.bulkAdd(backup.tables.items);
@@ -145,6 +148,7 @@ export async function restoreBackup(backup: BackupData): Promise<void> {
       if (backup.tables.syncLog.length > 0) await db.syncLog.bulkAdd(backup.tables.syncLog);
       if (backup.tables.customerItems.length > 0) await db.customerItems.bulkAdd(backup.tables.customerItems);
       if (backup.tables.paidItems.length > 0) await db.paidItems.bulkAdd(backup.tables.paidItems);
+      if (backup.tables.shippingLabels.length > 0) await db.shippingLabels.bulkAdd(backup.tables.shippingLabels);
     });
 
     console.log('Backup restored successfully');
@@ -171,6 +175,7 @@ export async function restoreBackupWithClear(backup: BackupData): Promise<void> 
     await db.syncLog.clear();
     await db.customerItems.clear();
     await db.paidItems.clear();
+    await db.shippingLabels.clear();
 
     // データを復元
     await restoreBackup(backup);
