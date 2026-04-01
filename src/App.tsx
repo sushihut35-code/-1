@@ -11,6 +11,7 @@ import { CustomerList } from './components/customers/CustomerList';
 import { PaidItemsPage } from './components/customers/PaidItemsPage';
 import { Analytics } from './components/analytics/Analytics';
 import { BackupManager } from './components/BackupManager';
+import { ShippingLabels } from './components/shipping/ShippingLabels';
 import { ToastProvider } from './components/common/Toast';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { initDatabase } from './db/db';
@@ -48,6 +49,7 @@ function App() {
                   <Route path="/sales" element={<SaleList />} />
                   <Route path="/customers" element={<CustomerList />} />
                   <Route path="/paid-items" element={<PaidItemsPage />} />
+                  <Route path="/shipping-labels" element={<ShippingLabels />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/settings" element={<BackupManager />} />
                   <Route path="/backup" element={<BackupManager />} />

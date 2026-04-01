@@ -139,13 +139,15 @@ export async function markAsPaid(customerId: number): Promise<void> {
   const items = await db.customerItems.where('customerId').equals(customerId).toArray();
   console.log('markAsPaid - items to move:', items);
 
-  await db.transaction('rw', [db.customerItems, db.paidItems, db.customers], async () => {
+  await db.transaction('rw', [db.customerItems, db.paidItems, db.customers, db.sales], async () => {
     // 支払い済み合計を計算
     const totalAmount = items.reduce((sum, item) => sum + (item.itemPrice || 0), 0);
     console.log('markAsPaid - total amount:', totalAmount);
 
-    // 顧客の支払い済み合計を更新
+    // 顧客情報を取得
     const customer = await db.customers.get(customerId);
+    const customerName = customer?.name || '不明な顧客';
+
     if (customer) {
       const currentPaidAmount = customer.totalAmount || 0;
       await db.customers.update(customerId, {
@@ -156,6 +158,21 @@ export async function markAsPaid(customerId: number): Promise<void> {
     }
 
     for (const item of items) {
+      // 売上登録に追加
+      await db.sales.add({
+        itemId: item.itemId || 0,
+        quantity: 1,
+        unitPrice: item.itemPrice || 0,
+        totalPrice: item.itemPrice || 0,
+        customerId: customerId,
+        paymentMethod: 'other',
+        status: 'completed',
+        notes: `${customerName} - キープ商品の支払い: ${item.itemName}`,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      console.log('markAsPaid - added sale record for:', item.itemName);
+
       // 支払い済みに追加
       const paidItemId = await db.paidItems.add({
         customerId: item.customerId,
@@ -183,13 +200,15 @@ export async function markSelectedAsPaid(customerId: number, itemIds: number[]):
 
   if (selectedItems.length === 0) return;
 
-  await db.transaction('rw', [db.customerItems, db.paidItems, db.customers], async () => {
+  await db.transaction('rw', [db.customerItems, db.paidItems, db.customers, db.sales], async () => {
     // 選択した商品の合計額を計算
     const totalAmount = selectedItems.reduce((sum, item) => sum + (item.itemPrice || 0), 0);
     console.log('markSelectedAsPaid - total amount:', totalAmount);
 
-    // 顧客の支払い済み合計を更新
+    // 顧客情報を取得
     const customer = await db.customers.get(customerId);
+    const customerName = customer?.name || '不明な顧客';
+
     if (customer) {
       const currentPaidAmount = customer.totalAmount || 0;
       await db.customers.update(customerId, {
@@ -200,6 +219,21 @@ export async function markSelectedAsPaid(customerId: number, itemIds: number[]):
     }
 
     for (const item of selectedItems) {
+      // 売上登録に追加
+      await db.sales.add({
+        itemId: item.itemId || 0,
+        quantity: 1,
+        unitPrice: item.itemPrice || 0,
+        totalPrice: item.itemPrice || 0,
+        customerId: customerId,
+        paymentMethod: 'other',
+        status: 'completed',
+        notes: `${customerName} - キープ商品の支払い: ${item.itemName}`,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      console.log('markSelectedAsPaid - added sale record for:', item.itemName);
+
       // 支払い済みに追加
       const paidItemId = await db.paidItems.add({
         customerId: item.customerId,
