@@ -1,5 +1,6 @@
 import { useAllShippingLabels } from '../../composables/useShippingLabels';
 import { generateShippingLabelPDF } from '../../utils/shippingLabelPDF';
+import { exportCarrierCSV } from '../../utils/shippingLabelCSV';
 import { deleteShippingLabel, updateShippingLabelStatus } from '../../composables/useShippingLabels';
 import { useToast } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -75,11 +76,11 @@ export function ShippingLabels() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-2xl">
-                        {label.carrier === 'yuupack' ? '📦' : '🚚'}
+                        {label.carrier === 'yuupack' ? '📦' : label.carrier === 'sagawa' ? '🚛' : '🚚'}
                       </span>
                       <div>
                         <p className="text-lg font-semibold text-gray-900">
-                          {label.carrier === 'yuupack' ? 'ゆうパック' : 'クロネコヤマト'}
+                          {label.carrier === 'yuupack' ? 'ゆうパック' : label.carrier === 'sagawa' ? '佐川急便' : 'クロネコヤマト'}
                         </p>
                         <p className="text-sm text-gray-600">
                           送り状番号: {label.labelNumber}
@@ -131,6 +132,20 @@ export function ShippingLabels() {
                       className="px-3 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                     >
                       📄 PDF
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        try {
+                          exportCarrierCSV([label], label.carrier);
+                          showToast('CSVをダウンロードしました', 'success');
+                        } catch (error) {
+                          showToast('CSVのエクスポートに失敗しました', 'error');
+                        }
+                      }}
+                      className="px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      📊 CSV
                     </button>
 
                     <button

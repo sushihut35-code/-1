@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePaidItems } from '../../composables/useCustomerItems';
 import { createShippingLabel } from '../../composables/useShippingLabels';
 import { generateShippingLabelPDF } from '../../utils/shippingLabelPDF';
@@ -13,7 +13,20 @@ interface ShippingLabelGeneratorProps {
   onClose: () => void;
 }
 
-type Carrier = 'yuupack' | 'yamato';
+type Carrier = 'yuupack' | 'yamato' | 'sagawa';
+
+// localStorageから送り元情報を読み込む
+function loadSenderInfo(): { name: string; address: string; phone: string } {
+  try {
+    const saved = localStorage.getItem('sender_info');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to load sender info:', e);
+  }
+  return { name: '', address: '', phone: '' };
+}
 
 export function ShippingLabelGenerator({
   customerId,
@@ -25,10 +38,12 @@ export function ShippingLabelGenerator({
   const paidItems = usePaidItems(customerId);
   const { showToast } = useToast();
 
+  const savedSender = loadSenderInfo();
+
   const [carrier, setCarrier] = useState<Carrier>('yuupack');
-  const [senderName, setSenderName] = useState('');
-  const [senderAddress, setSenderAddress] = useState('');
-  const [senderPhone, setSenderPhone] = useState('');
+  const [senderName, setSenderName] = useState(savedSender.name);
+  const [senderAddress, setSenderAddress] = useState(savedSender.address);
+  const [senderPhone, setSenderPhone] = useState(savedSender.phone);
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -145,6 +160,17 @@ export function ShippingLabelGenerator({
               className="w-4 h-4 text-primary-600"
             />
             <span className="text-sm">🚚 クロネコヤマト</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="carrier"
+              value="sagawa"
+              checked={carrier === 'sagawa'}
+              onChange={() => setCarrier('sagawa')}
+              className="w-4 h-4 text-primary-600"
+            />
+            <span className="text-sm">🚛 佐川急便</span>
           </label>
         </div>
       </div>
@@ -306,7 +332,7 @@ export function ShippingLabelGenerator({
         message="送り状を作成してPDFをダウンロードします。よろしいですか？"
         details={
           <div className="space-y-2 text-sm">
-            <p><span className="font-semibold">配送業者:</span> {carrier === 'yuupack' ? 'ゆうパック' : 'クロネコヤマト'}</p>
+            <p><span className="font-semibold">配送業者:</span> {carrier === 'yuupack' ? 'ゆうパック' : carrier === 'yamato' ? 'クロネコヤマト' : '佐川急便'}</p>
             <p><span className="font-semibold">商品数:</span> {selectedItemIds.length}点</p>
             <p><span className="font-semibold">合計金額:</span> ¥{selectedTotal.toLocaleString()}</p>
           </div>

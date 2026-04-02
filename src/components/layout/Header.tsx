@@ -7,6 +7,7 @@ export function Header() {
     { path: '/', label: 'ホーム' },
     { path: '/inventory', label: '在庫' },
     { path: '/sales', label: '売上' },
+    { path: '/customers', label: '顧客' },
     { path: '/analytics', label: '分析' },
   ];
 

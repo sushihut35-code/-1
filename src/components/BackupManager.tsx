@@ -13,7 +13,30 @@ import { useToast } from './common/Toast';
 export function BackupManager() {
   const [autoBackups, setAutoBackups] = useState<BackupData[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [senderInfo, setSenderInfo] = useState({
+    name: '',
+    address: '',
+    phone: ''
+  });
   const { showToast } = useToast();
+
+  // 送り元情報を読み込む
+  useEffect(() => {
+    const saved = localStorage.getItem('sender_info');
+    if (saved) {
+      try {
+        setSenderInfo(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse sender info:', e);
+      }
+    }
+  }, []);
+
+  // 送り元情報を保存
+  const handleSaveSenderInfo = () => {
+    localStorage.setItem('sender_info', JSON.stringify(senderInfo));
+    showToast('送り元情報を保存しました', 'success');
+  };
 
   // 自動バックアップを読み込む
   useEffect(() => {
@@ -155,6 +178,60 @@ export function BackupManager() {
           />
           {isProcessing ? '復元中...' : '📂 バックアップファイルを選択'}
         </label>
+      </div>
+
+      {/* 送り元情報設定 */}
+      <div className="bg-white rounded-lg shadow-md p-6" style={{ backgroundColor: '#FFFFFF' }}>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">🏠 送り元情報</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          送り状作成時に自動入力される送り元情報を設定します。
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              お名前 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="senderName"
+              value={senderInfo.name}
+              onChange={(e) => setSenderInfo(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="例: 山田 太郎"
+ />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              住所 <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="senderAddress"
+              rows={2}
+              value={senderInfo.address}
+              onChange={(e) => setSenderInfo(prev => ({ ...prev, address: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="例: 〒100-0001 東京都千代田区千代田1-1-1" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              電話番号 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              id="senderPhone"
+              value={senderInfo.phone}
+              onChange={(e) => setSenderInfo(prev => ({ ...prev, phone: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="例: 03-1234-5678" />
+          </div>
+        </div>
+        <button
+          onClick={handleSaveSenderInfo}
+
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        >
+          保存する
+        </button>
       </div>
 
       {/* 自動バックアップ一覧 */}

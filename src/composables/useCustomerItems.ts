@@ -255,30 +255,13 @@ export async function markSelectedAsPaid(customerId: number, itemIds: number[]):
 
 // 支払い済み商品を取得
 export function usePaidItems(customerId: number | undefined) {
-  console.log('usePaidItems - called with customerId:', customerId);
-  return useLiveQuery(() => {
-    console.log('usePaidItems - executing query for customerId:', customerId);
-    if (!customerId) {
-      console.log('usePaidItems - no customerId, returning empty array');
-      return Promise.resolve([]);
-    }
-    return db.paidItems
+  return useLiveQuery(async () => {
+    if (!customerId) return [];
+    const items = await db.paidItems
       .where('customerId')
       .equals(customerId)
-      .toArray()
-      .then(items => {
-        console.log('usePaidItems - fetched items:', items);
-        // paidAtでソート
-        return items.sort((a, b) => {
-          const dateA = a.paidAt ? new Date(a.paidAt).getTime() : 0;
-          const dateB = b.paidAt ? new Date(b.paidAt).getTime() : 0;
-          return dateB - dateA; // 新しい順
-        });
-      })
-      .catch(error => {
-        console.error('usePaidItems - error:', error);
-        return [];
-      });
+      .toArray();
+    return items.reverse();
   }, [customerId]);
 }
 

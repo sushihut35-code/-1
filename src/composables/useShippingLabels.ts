@@ -30,7 +30,7 @@ export function generateLabelNumber(): string {
 // 送り状を作成
 export async function createShippingLabel(
   customerId: number,
-  carrier: 'yuupack' | 'yamato',
+  carrier: 'yuupack' | 'yamato' | 'sagawa',
   senderName: string,
   senderAddress: string,
   senderPhone: string,

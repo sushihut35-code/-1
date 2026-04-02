@@ -167,7 +167,7 @@ export interface ShippingLabel {
   id?: number;
   customerId: number;
   labelNumber: string; // 送り状番号（日付+ランダム）
-  carrier: 'yuupack' | 'yamato'; // 配送業者
+  carrier: 'yuupack' | 'yamato' | 'sagawa'; // 配送業者
   recipientName: string; // お届け先名前
   recipientAddress: string; // お届け先住所
   recipientPhone: string; // お届け先電話番号
